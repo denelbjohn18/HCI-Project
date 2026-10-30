@@ -1,3 +1,4 @@
+import { hasHaptics } from '../lib/feedback'
 import { canSpeak } from '../lib/speech'
 import type { Settings } from '../state/useSettings'
 import { Segmented } from './Segmented'
@@ -68,6 +69,31 @@ export function DisplayPanel({ settings, onChange, onReset }: Props) {
           ]}
           value={settings.speechRate}
           onChange={(speechRate) => onChange({ speechRate })}
+        />
+      )}
+
+      <Segmented
+        legend="Sound"
+        description="Short sounds confirm presses and changes. Read aloud is separate."
+        options={[
+          { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' },
+        ]}
+        value={settings.sound}
+        onChange={(sound) => onChange({ sound })}
+        silent
+      />
+
+      {hasHaptics && (
+        <Segmented
+          legend="Vibration"
+          description="A light tap when an answer changes or the chance moves to another band."
+          options={[
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Off' },
+          ]}
+          value={settings.haptics}
+          onChange={(haptics) => onChange({ haptics })}
         />
       )}
 

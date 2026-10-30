@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AVERAGE_SCORE, BAND_FLOOR, apportion, bandFor, explain, pointsFor, probabilityOf } from './explain'
+import { AVERAGE_SCORE, BAND_FLOOR, SCORE_BOUNDS, apportion, bandFor, explain, pointsFor, probabilityOf } from './explain'
 import { snap } from './factors'
 import { STUDY_PROFILES, TYPICAL_PROFILE } from './profiles'
 import { FACTOR_KEYS, SPEC, type Profile } from './scorecard'
@@ -46,6 +46,27 @@ describe('explain', () => {
     }
   })
 
+  it('counts an answer outside the dataset as the nearest value it knows', () => {
+    const above = { ...TYPICAL_PROFILE, cgpa: 10, aptitude: 100, softSkills: 5 }
+    const capped = {
+      ...TYPICAL_PROFILE,
+      cgpa: SPEC.cgpa.max,
+      aptitude: SPEC.aptitude.max,
+      softSkills: SPEC.softSkills.max,
+    }
+    const below = { ...TYPICAL_PROFILE, cgpa: 0, aptitude: 0, softSkills: 0 }
+    const floored = {
+      ...TYPICAL_PROFILE,
+      cgpa: SPEC.cgpa.min,
+      aptitude: SPEC.aptitude.min,
+      softSkills: SPEC.softSkills.min,
+    }
+    expect(explain(above).score).toBeCloseTo(explain(capped).score, 6)
+    expect(explain(below).score).toBeCloseTo(explain(floored).score, 6)
+    expect(SCORE_BOUNDS.min).toBeGreaterThan(0)
+    expect(SCORE_BOUNDS.max).toBeLessThan(100)
+  })
+
   it('places band boundaries at the stated probabilities', () => {
     expect(bandFor(BAND_FLOOR.moderate - 0.001)).toBe('low')
     expect(bandFor(BAND_FLOOR.moderate)).toBe('moderate')
@@ -81,6 +102,12 @@ describe('study profiles', () => {
     for (const drags of [meera, kabir]) expect(drags[1].points - drags[0].points).toBeGreaterThan(1.5)
   })
 
+  it('gives Meera two factors the same rounded help', () => {
+    const helps = explain(STUDY_PROFILES[0].profile).contributions.filter((c) => c.shown > 0)
+    const best = Math.max(...helps.map((c) => c.shown))
+    expect(helps.filter((c) => c.shown === best).map((c) => c.key).sort()).toEqual(['cgpa', 'extracurricular'])
+  })
+
   it('each need two changes to reach a strong chance', () => {
     for (const { profile } of STUDY_PROFILES) {
       const suggestion = suggestNextBand(profile)
@@ -97,6 +124,16 @@ describe('suggestNextBand', () => {
       const suggestion = suggestNextBand(profile)
       if (suggestion) expect(['moderate', 'strong']).toContain(explain(suggestion.profile).band)
     }
+  })
+
+  it('keeps suggesting when a typed answer is already past the data', () => {
+    const profile = Object.fromEntries(FACTOR_KEYS.map((key) => [key, SPEC[key].min])) as Profile
+    profile.aptitude = 100
+    const suggestion = suggestNextBand(profile)
+    expect(suggestion).not.toBeNull()
+    expect(suggestion!.changes.some((change) => change.key === 'aptitude')).toBe(false)
+    expect(suggestion!.profile.aptitude).toBe(100)
+    expect(explain(suggestion!.profile).band).toBe(suggestion!.target)
   })
 
   it('has nothing to suggest once a student is strong', () => {

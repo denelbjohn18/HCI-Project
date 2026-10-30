@@ -2,8 +2,9 @@
  * Monochrome editorial interface after the monopo saigon reference: black,
  * white and a few greys carry every control and label. The only colour is
  * light itself: the atmosphere inside the "light chamber" (green on black in
- * the dark theme, an orange aura on paper in the light theme) and
- * the lit figures that count placed students. Data never relies on colour;
+ * the dark theme, an orange aura on paper in the light theme), a faint spill
+ * of that light across the blank page, and the lit figures that count placed
+ * students. Data never relies on colour;
  * helping and holding back are told apart by sign, direction and texture.
  */
 :root {
@@ -31,6 +32,16 @@
   --lit: light-dark(rgb(115 40 0), var(--amber));
   --lit-glow: light-dark(rgb(255 172 46 / 0.55), rgb(255 172 46 / 0.6));
   --unlit: light-dark(rgb(0 0 0 / 0.56), rgb(255 255 255 / 0.5));
+
+  /*
+   * Spill light. Each glow is placed from the viewport's right edge and top edge in viewport
+   * units, so the fixed page layer, the right-docked side panel and the pinned header all
+   * paint it in the same place. Peaks stay low enough that muted text keeps 4.5:1.
+   */
+  --ambient:
+    radial-gradient(55vw 50vh at 100% 0, light-dark(rgb(255 186 16 / 0.11), rgb(160 224 171 / 0.1)), transparent),
+    radial-gradient(60vw 55vh at 100% 100vh, light-dark(rgb(255 128 32 / 0.1), rgb(255 172 46 / 0.08)), transparent),
+    radial-gradient(60vw 45vh at calc(100% - 100vw) 100vh, light-dark(rgb(255 100 16 / 0.07), rgb(120 150 105 / 0.14)), transparent);
 
   --font: 'Hanken Grotesk Variable', Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -81,6 +92,7 @@
 }
 
 :root[data-contrast='more'] {
+  --ambient: none;
   --muted: var(--fg);
   --hairline: light-dark(rgb(0 0 0 / 0.55), rgb(255 255 255 / 0.6));
   --unlit: light-dark(rgb(0 0 0 / 0.75), rgb(255 255 255 / 0.75));
@@ -105,6 +117,12 @@
     --duration-fast: 0s;
     --duration: 0s;
     --duration-slow: 0s;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --ambient: none;
   }
 }
 

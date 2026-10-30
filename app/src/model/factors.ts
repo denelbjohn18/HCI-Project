@@ -18,7 +18,7 @@ export const FACTORS: Record<FactorKey, FactorInfo> = {
     label: 'CGPA',
     noun: 'CGPA',
     control: 'range',
-    help: 'Out of 10. Lumen’s data covers 6.5 to 9.1.',
+    help: 'Out of 10. Lumen’s data covers 6.5 to 9.1. A number outside that counts as the nearer end.',
     detailStep: 0.5,
     detailUnit: 'of CGPA',
   },
@@ -26,7 +26,7 @@ export const FACTORS: Record<FactorKey, FactorInfo> = {
     label: 'Aptitude test score',
     noun: 'aptitude score',
     control: 'range',
-    help: 'Your latest aptitude or practice test, out of 100. Lumen’s data covers 60 to 90.',
+    help: 'Your latest aptitude or practice test, out of 100. Outside 60 to 90, Lumen counts the nearer end.',
     detailStep: 5,
     detailUnit: 'marks',
   },
@@ -50,7 +50,7 @@ export const FACTORS: Record<FactorKey, FactorInfo> = {
     label: 'Soft skills rating',
     noun: 'soft skills rating',
     control: 'range',
-    help: 'From mock interviews or trainers, out of 5. Lumen’s data covers 3.0 to 4.8.',
+    help: 'From mock interviews or trainers, out of 5. Outside 3.0 to 4.8, Lumen counts the nearer end.',
     detailStep: 0.5,
     detailUnit: 'of rating',
   },
@@ -85,6 +85,47 @@ export function questionNumber(key: FactorKey): number {
   return ORDER.indexOf(key) + 1
 }
 
+/** Full scale a student can actually have. Wider than the dataset for the three ratings. */
+export function realBounds(key: FactorKey): { min: number; max: number } {
+  switch (key) {
+    case 'cgpa':
+      return { min: 0, max: 10 }
+    case 'aptitude':
+      return { min: 0, max: 100 }
+    case 'softSkills':
+      return { min: 0, max: 5 }
+    case 'projects':
+    case 'certifications':
+    case 'training':
+    case 'extracurricular':
+      return { min: SPEC[key].min, max: SPEC[key].max }
+    default: {
+      const unhandled: never = key
+      throw new Error(`Unhandled factor ${String(unhandled)}`)
+    }
+  }
+}
+
+/** Nearest dataset value. Answers outside the data still display, but scoring uses this. */
+export function learnedValue(key: FactorKey, value: number): number {
+  const { min, max } = SPEC[key]
+  return Math.min(max, Math.max(min, value))
+}
+
+function boundLabel(key: FactorKey, bound: number): string {
+  return Number.isInteger(bound) ? String(bound) : formatValue(key, bound)
+}
+
+/** Shown after the field is left. Empty, garbled, or off the real scale. Dataset edges are allowed. */
+export function entryError(key: FactorKey, text: string): string | null {
+  const { min, max } = realBounds(key)
+  if (text.trim() === '') return `Enter your ${FACTORS[key].noun}.`
+  const value = Number(text)
+  if (!Number.isFinite(value)) return `Use digits only, for example ${formatValue(key, SPEC[key].mean)}.`
+  if (value < min || value > max) return `Enter a value from ${boundLabel(key, min)} to ${boundLabel(key, max)}.`
+  return null
+}
+
 export function formatValue(key: FactorKey, value: number): string {
   const { control } = FACTORS[key]
   switch (control) {
@@ -101,10 +142,12 @@ export function formatValue(key: FactorKey, value: number): string {
   }
 }
 
-/** Rounds to the factor's step so floating-point drift never reaches the UI. */
+/** Rounds to the factor's step. Ratings may sit outside the dataset; counts stay inside it. */
 export function snap(key: FactorKey, value: number): number {
-  const { min, max, step } = SPEC[key]
-  const clamped = Math.min(max, Math.max(min, value))
+  const { min, step } = SPEC[key]
+  const bounds = realBounds(key)
+  const clamped = Math.min(bounds.max, Math.max(bounds.min, value))
   const snapped = Math.round((clamped - min) / step) * step + min
-  return Number(snapped.toFixed(step < 1 ? 1 : 0))
+  const bounded = Math.min(bounds.max, Math.max(bounds.min, snapped))
+  return Number(bounded.toFixed(step < 1 ? 1 : 0))
 }

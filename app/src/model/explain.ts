@@ -1,9 +1,12 @@
+import { learnedValue } from './factors'
 import { FACTOR_KEYS, MODEL, SPEC, type FactorKey, type Profile } from './scorecard'
 
 export type Band = 'low' | 'moderate' | 'strong'
 
 /** Probability at which each band starts. */
 export const BAND_FLOOR = { moderate: 0.3, strong: 0.6 } as const
+
+export const BAND_WORD: Record<Band, string> = { low: 'Low', moderate: 'Moderate', strong: 'Strong' }
 
 export const BAND_LABEL: Record<Band, string> = {
   low: 'Low chance',
@@ -24,7 +27,13 @@ export const AVERAGE_SCORE = toScore(MODEL.referenceLogit)
 
 export function pointsFor(key: FactorKey, value: number): number {
   const { weight, mean } = SPEC[key]
-  return MODEL.pointsPerLogit * weight * (value - mean)
+  return MODEL.pointsPerLogit * weight * (learnedValue(key, value) - mean)
+}
+
+/** Lowest and highest scores the dataset can produce. The track is drawn on this, not on 0–100. */
+export const SCORE_BOUNDS = {
+  min: AVERAGE_SCORE + FACTOR_KEYS.reduce((sum, key) => sum + pointsFor(key, SPEC[key].min), 0),
+  max: AVERAGE_SCORE + FACTOR_KEYS.reduce((sum, key) => sum + pointsFor(key, SPEC[key].max), 0),
 }
 
 /** Largest number of points any single factor can add or remove; keeps chart scales fixed. */

@@ -1,7 +1,8 @@
 import { MinusIcon, PlusIcon } from '@phosphor-icons/react'
-import { useId, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import { cue } from '../lib/feedback'
 import { signed } from '../model/explain'
-import { FACTORS, formatValue, snap } from '../model/factors'
+import { FACTORS, entryError, formatValue, learnedValue, snap } from '../model/factors'
 import { SPEC, type FactorKey } from '../model/scorecard'
 import { Segmented } from './Segmented'
 
@@ -23,77 +24,136 @@ interface ControlProps extends Props {
 
 const position = (key: FactorKey, value: number) => (value - SPEC[key].min) / (SPEC[key].max - SPEC[key].min)
 
-function rangeError(key: FactorKey, text: string): string | null {
+function clampNote(key: FactorKey, value: number): string | null {
   const { min, max } = SPEC[key]
-  if (text.trim() === '') return `Enter your ${FACTORS[key].noun}.`
-  const value = Number(text)
-  if (!Number.isFinite(value)) return `Use digits only, for example ${formatValue(key, SPEC[key].mean)}.`
-  if (value < min || value > max) return `Enter a value from ${min} to ${max}. That is the range Lumen learned from.`
+  if (value > max) return `Lumen’s data stops at ${formatValue(key, max)}, so ${formatValue(key, value)} counts as ${formatValue(key, max)}.`
+  if (value < min) return `Lumen’s data starts at ${formatValue(key, min)}, so ${formatValue(key, value)} counts as ${formatValue(key, min)}.`
   return null
 }
 
 function RangeControl({ factorKey, value, onChange, was, ids }: ControlProps) {
   const { min, max, step } = SPEC[factorKey]
+  const known = learnedValue(factorKey, value)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState<string | null>(null)
-  const error = draft === null ? null : rangeError(factorKey, draft)
-
-  const type = (text: string) => {
-    setDraft(text)
-    if (!rangeError(factorKey, text)) onChange(snap(factorKey, Number(text)))
+  const [error, setError] = useState<string | null>(null)
+  const [source, setSource] = useState(value)
+  const stale = value !== source
+  if (stale) {
+    setSource(value)
+    setDraft(null)
+    setError(null)
   }
+  const activeDraft = stale ? null : draft
+  const activeError = stale ? null : error
+  const note = activeDraft === null && activeError === null ? clampNote(factorKey, value) : null
+
+  const commit = useCallback(
+    (text: string) => {
+      const problem = entryError(factorKey, text)
+      if (problem) {
+        cue('error')
+        setError(problem)
+        return
+      }
+      const next = snap(factorKey, Number(text))
+      setDraft(null)
+      setError(null)
+      if (next !== value) {
+        cue('select')
+        onChange(next)
+      }
+    },
+    [factorKey, onChange, setDraft, setError, value],
+  )
+
+  useEffect(() => {
+    const input = inputRef.current
+    const form = input?.form
+    if (!form) return
+    const onSubmit = () => {
+      if (input.getAttribute('aria-invalid') === 'true') return
+      const shown = input.value
+      if (shown !== formatValue(factorKey, value)) commit(shown)
+    }
+    form.addEventListener('submit', onSubmit)
+    return () => form.removeEventListener('submit', onSubmit)
+  }, [commit, factorKey, value])
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
-      setDraft(null)
-      if (window.matchMedia('(pointer: coarse)').matches) event.currentTarget.blur()
+      event.currentTarget.blur()
       return
     }
     const direction = event.key === 'ArrowUp' ? 1 : event.key === 'ArrowDown' ? -1 : 0
     if (direction === 0) return
     event.preventDefault()
     setDraft(null)
-    onChange(snap(factorKey, value + direction * step))
+    setError(null)
+    const next = snap(factorKey, value + direction * step)
+    if (next === value) {
+      cue('limit')
+      return
+    }
+    cue('tick', position(factorKey, learnedValue(factorKey, next)))
+    onChange(next)
   }
 
   return (
     <div className="range-control">
-      <div className="range" style={{ '--fill': position(factorKey, value) } as CSSProperties}>
+      <div className="range" style={{ '--fill': position(factorKey, known) } as CSSProperties}>
         <input
           type="range"
           className="range__input"
           min={min}
           max={max}
           step={step}
-          value={value}
+          value={known}
           onChange={(event) => {
             setDraft(null)
-            onChange(snap(factorKey, Number(event.target.value)))
+            setError(null)
+            const next = snap(factorKey, Number(event.target.value))
+            if (next <= min || next >= max) cue('limit')
+            else cue('tick', position(factorKey, next))
+            onChange(next)
           }}
           aria-labelledby={ids.label}
           aria-describedby={ids.help}
-          aria-valuetext={formatValue(factorKey, value)}
+          aria-valuetext={formatValue(factorKey, known)}
         />
         {was !== undefined && was !== value && (
-          <span className="range__was" style={{ '--at': position(factorKey, was) } as CSSProperties} aria-hidden="true" />
+          <span
+            className="range__was"
+            style={{ '--at': position(factorKey, learnedValue(factorKey, was)) } as CSSProperties}
+            aria-hidden="true"
+          />
         )}
       </div>
       <input
+        ref={inputRef}
         id={ids.input}
         type="text"
         inputMode="decimal"
         enterKeyHint="done"
         autoComplete="off"
         className="number-input num"
-        value={draft ?? formatValue(factorKey, value)}
-        onChange={(event) => type(event.target.value)}
-        onBlur={() => setDraft(null)}
+        data-factor={factorKey}
+        value={activeDraft ?? formatValue(factorKey, value)}
+        onChange={(event) => {
+          setDraft(event.target.value)
+          setError(null)
+        }}
+        onBlur={(event) => {
+          const shown = event.currentTarget.value
+          if (shown !== formatValue(factorKey, value)) commit(shown)
+        }}
         onKeyDown={onKeyDown}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={activeError ? true : undefined}
         aria-describedby={`${ids.help} ${ids.error}`}
       />
-      <p id={ids.error} className="field__error" aria-live="polite">
-        {error}
+      <p id={ids.error} className={activeError ? 'field__error' : 'field__note'} aria-live="polite">
+        {activeError ?? note}
       </p>
     </div>
   )
@@ -115,6 +175,7 @@ function CountControl({ factorKey, value, onChange, ids }: ControlProps) {
         aria-label={`Fewer ${noun}`}
         aria-disabled={value <= min}
         onClick={() => change(-1)}
+        data-cue="fewer"
       >
         <MinusIcon size={16} aria-hidden="true" />
       </button>
@@ -127,6 +188,7 @@ function CountControl({ factorKey, value, onChange, ids }: ControlProps) {
         aria-label={`More ${noun}`}
         aria-disabled={value >= max}
         onClick={() => change(1)}
+        data-cue="more"
       >
         <PlusIcon size={16} aria-hidden="true" />
       </button>

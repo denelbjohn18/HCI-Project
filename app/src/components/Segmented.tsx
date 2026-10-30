@@ -13,10 +13,20 @@ interface Props<T extends string> {
   onChange: (value: T) => void
   /** Keeps the legend for screen readers when a visible label sits elsewhere. */
   hideLegend?: boolean
+  /** Skips the press cue, for a choice that gives its own feedback. */
+  silent?: boolean
 }
 
 /** Native radio buttons styled as one control, so arrow keys and screen readers work for free. */
-export function Segmented<T extends string>({ legend, description, options, value, onChange, hideLegend }: Props<T>) {
+export function Segmented<T extends string>({
+  legend,
+  description,
+  options,
+  value,
+  onChange,
+  hideLegend,
+  silent,
+}: Props<T>) {
   const name = useId()
   const descriptionId = `${name}-description`
 
@@ -37,6 +47,7 @@ export function Segmented<T extends string>({ legend, description, options, valu
               value={option.value}
               checked={option.value === value}
               onChange={() => onChange(option.value)}
+              data-cue={silent ? 'none' : undefined}
             />
             <span>{option.label}</span>
           </label>

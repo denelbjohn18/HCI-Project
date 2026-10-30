@@ -54,13 +54,14 @@ export function AboutPanel() {
 
       <section>
         <h3>Your privacy</h3>
-        <p>Everything you enter stays in this browser tab. Nothing is sent anywhere.</p>
+        <p>Everything you enter stays in this browser tab and is cleared when you close it. Nothing is sent anywhere.</p>
       </section>
 
       <p className="prose__source">
         Data:{' '}
         <a href={DATASET.url} target="_blank" rel="noreferrer">
           {DATASET.name}
+          <span className="visually-hidden"> (opens in a new tab)</span>
         </a>
         , {DATASET.license}. Built for AIM4141 Human Computer Interaction.
       </p>

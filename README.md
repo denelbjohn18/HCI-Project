@@ -67,6 +67,7 @@ The course asks for the principles to show up in the product, so the layout is t
 - **One fact, said three ways.** A row of ten people, a sentence, and a score all report the same chance. Factors that help are solid bars. Factors that hold the score back are hatched, so the chart still reads in greyscale and in print.
 - **Every action can be taken back.** Undo and redo are always available (Shneiderman). Explore also offers the smallest set of changes that reaches the next band, and applying it is itself one undoable step.
 - **The pointer decides the target size.** Controls are at least 44px with a mouse and 48px on a touch screen (Fitts's law). A number can be typed instead of dragged.
+- **Sound and touch confirm what changed.** Every cue is one water-droplet sample at a different pitch: higher means more or forward, lower means less or back, and moving to another band plays two notes. Rarer, bigger changes get louder cues (Shneiderman's informative feedback), and phones that can vibrate tap for answer and band changes. Each cue repeats something already on screen, and Sound in the header silences all of them in one press.
 - **The model reports its own limits.** About states the training set, how often the estimate was right, what was left out, and that a score is not a verdict.
 
 ## In the repository

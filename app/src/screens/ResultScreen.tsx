@@ -7,13 +7,12 @@ import { FactorChart } from '../components/FactorChart'
 import { ListenButton } from '../components/ListenButton'
 import { ScoreTrack } from '../components/ScoreTrack'
 import {
-  BAND_LABEL,
   BAND_START_SCORE,
+  BAND_WORD,
   chanceSentence,
   explain,
   nextBand,
   signed,
-  type Band,
   type Contribution,
   type Explanation,
 } from '../model/explain'
@@ -27,36 +26,47 @@ interface Props {
   speechRate: number
 }
 
-const BAND_WORD: Record<Band, string> = { low: 'Low', moderate: 'Moderate', strong: 'Strong' }
+function leaders(contributions: Contribution[], sign: 1 | -1): Contribution[] {
+  const directed = contributions.filter((c) => Math.sign(c.shown) === sign)
+  if (directed.length === 0) return []
+  const best = Math.max(...directed.map((c) => sign * c.shown))
+  return directed.filter((c) => sign * c.shown === best)
+}
 
-function extremes(contributions: Contribution[]) {
-  const sorted = [...contributions].sort((a, b) => b.shown - a.shown)
-  const helps = sorted[0].shown > 0 ? sorted[0] : null
-  const drags = sorted[sorted.length - 1].shown < 0 ? sorted[sorted.length - 1] : null
-  return { helps, drags }
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
 }
 
 function scoreLine(result: Explanation): string {
   const target = nextBand(result.band)
-  if (!target) return `Above the strong line at ${Math.round(BAND_START_SCORE.strong)}.`
-  return `${BAND_WORD[target]} starts at ${Math.round(BAND_START_SCORE[target])}.`
+  if (!target) return `Above the strong line at ${Math.round(BAND_START_SCORE.strong)} points.`
+  return `${BAND_WORD[target]} starts at ${Math.round(BAND_START_SCORE[target])} points.`
 }
 
 function spokenSummary(result: Explanation): string {
-  const { helps, drags } = extremes(result.contributions)
+  const helps = leaders(result.contributions, 1)
+  const drags = leaders(result.contributions, -1)
   const points = (c: Contribution) => `${Math.abs(c.shown)} ${Math.abs(c.shown) === 1 ? 'point' : 'points'}`
+  const each = (group: Contribution[]) => (group.length > 1 ? ' each' : '')
   return [
-    `${BAND_LABEL[result.band]}.`,
+    `${BAND_WORD[result.band]} chance.`,
     chanceSentence(result.outOfTen),
-    `Your ${APP_NAME} score is ${result.shownScore}. ${scoreLine(result)}`,
-    helps ? `Helping you most: ${FACTORS[helps.key].noun}, plus ${points(helps)}.` : '',
-    drags ? `Holding you back most: ${FACTORS[drags.key].noun}, minus ${points(drags)}.` : '',
+    `That is ${result.shownScore} points. ${scoreLine(result)}`,
+    helps.length
+      ? `Helping you most: ${joinNames(helps.map((c) => FACTORS[c.key].noun))}, plus ${points(helps[0])}${each(helps)}.`
+      : '',
+    drags.length
+      ? `Holding you back most: ${joinNames(drags.map((c) => FACTORS[c.key].noun))}, minus ${points(drags[0])}${each(drags)}.`
+      : '',
   ].join(' ')
 }
 
 export function ResultScreen({ lumen, speechRate }: Props) {
   const result = useMemo(() => explain(lumen.profile), [lumen.profile])
-  const { helps, drags } = extremes(result.contributions)
+  const helps = leaders(result.contributions, 1)
+  const drags = leaders(result.contributions, -1)
 
   return (
     <div className="split result-screen">
@@ -73,48 +83,53 @@ export function ResultScreen({ lumen, speechRate }: Props) {
 
         <div className="result-score">
           <div className="result-score__head">
-            <span className="label muted">{APP_NAME} score</span>
             <span className="result-score__value num">{result.shownScore}</span>
+            <span className="muted">points</span>
             <span className="muted">{scoreLine(result)}</span>
           </div>
           <ScoreTrack score={result.score} probability={result.probability} />
         </div>
 
-        {(helps || drags) && (
-          <dl className="extremes">
-            {helps && (
-              <div className="extreme">
-                <dt className="label muted">Helping you most</dt>
-                <dd>
-                  {FACTORS[helps.key].label}
-                  <span className="tag num" data-sign="1">
-                    {signed(helps.shown)}
-                  </span>
-                </dd>
-              </div>
-            )}
-            {drags && (
-              <div className="extreme">
-                <dt className="label muted">Holding you back most</dt>
-                <dd>
-                  {FACTORS[drags.key].label}
-                  <span className="tag num" data-sign="-1">
-                    {signed(drags.shown)}
-                  </span>
-                </dd>
-              </div>
-            )}
-          </dl>
-        )}
-
         <div className="actions">
-          <a className="pill pill--solid" href={routeHref('explore')}>
+          <a className="pill pill--solid" href={routeHref('explore')} data-cue="transition">
             Explore changes
             <ArrowRightIcon size={18} aria-hidden="true" />
           </a>
           <ListenButton text={spokenSummary(result)} rate={speechRate} />
         </div>
 
+        {(helps.length > 0 || drags.length > 0) && (
+          <dl className="extremes">
+            {helps.length > 0 && (
+              <div className="extreme">
+                <dt className="label muted">Helping you most</dt>
+                <dd>
+                  {joinNames(helps.map((c) => FACTORS[c.key].label))}
+                  <span className="tag num" data-sign="1">
+                    {signed(helps[0].shown)}
+                    {helps.length > 1 ? ' each' : ''}
+                  </span>
+                </dd>
+              </div>
+            )}
+            {drags.length > 0 && (
+              <div className="extreme">
+                <dt className="label muted">Holding you back most</dt>
+                <dd>
+                  {joinNames(drags.map((c) => FACTORS[c.key].label))}
+                  <span className="tag num" data-sign="-1">
+                    {signed(drags[0].shown)}
+                    {drags.length > 1 ? ' each' : ''}
+                  </span>
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </Chamber>
+
+      <div className="split__work">
+        <FactorChart explanation={result} />
         <details className="disclosure">
           <summary>How sure is {APP_NAME}?</summary>
           <div className="disclosure__body">
@@ -129,11 +144,7 @@ export function ResultScreen({ lumen, speechRate }: Props) {
             </p>
           </div>
         </details>
-      </Chamber>
-
-      <div className="split__work">
-        <FactorChart explanation={result} />
-        <a className="text-link label" href={routeHref('profile')}>
+        <a className="text-link label" href={routeHref('profile')} data-cue="transition">
           Edit your answers
         </a>
       </div>

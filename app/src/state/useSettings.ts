@@ -5,6 +5,7 @@ export type TextSize = 'default' | 'large' | 'larger'
 export type Contrast = 'standard' | 'more'
 export type Motion = 'system' | 'reduce'
 export type SpeechRate = 'slower' | 'normal' | 'faster'
+export type Toggle = 'on' | 'off'
 
 export interface Settings {
   theme: Theme
@@ -12,6 +13,8 @@ export interface Settings {
   contrast: Contrast
   motion: Motion
   speechRate: SpeechRate
+  sound: Toggle
+  haptics: Toggle
 }
 
 const STORAGE_KEY = 'lumen:settings:v1'
@@ -22,6 +25,8 @@ export const DEFAULT_SETTINGS: Settings = {
   contrast: 'standard',
   motion: 'system',
   speechRate: 'normal',
+  sound: 'on',
+  haptics: 'on',
 }
 
 export const SPEECH_RATE: Record<SpeechRate, number> = { slower: 0.85, normal: 1, faster: 1.2 }

@@ -1,7 +1,7 @@
 import { CaretDownIcon } from '@phosphor-icons/react'
 import { useState, type CSSProperties } from 'react'
 import { POINTS_SPAN, signed, type Explanation } from '../model/explain'
-import { FACTORS, formatValue, snap } from '../model/factors'
+import { FACTORS, formatValue, learnedValue, snap } from '../model/factors'
 import { MODEL, SPEC, type FactorKey } from '../model/scorecard'
 
 function worth(key: FactorKey): string {
@@ -23,11 +23,17 @@ function detail(key: FactorKey, value: number): string[] {
         `Each ${info.detailUnit} is worth about ${worth(key)} points.`,
         `Average student: ${formatValue(key, snap(key, mean))}. You: ${formatValue(key, value)}.`,
       ]
-    case 'range':
+    case 'range': {
+      const known = learnedValue(key, value)
+      const yours =
+        known === value
+          ? `You: ${formatValue(key, value)}.`
+          : `You entered ${formatValue(key, value)}, which counts as ${formatValue(key, known)}.`
       return [
         `Every ${info.detailStep} ${info.detailUnit} is worth about ${worth(key)} points.`,
-        `Average student: ${formatValue(key, snap(key, mean))}. You: ${formatValue(key, value)}.`,
+        `Average student: ${formatValue(key, snap(key, mean))}. ${yours}`,
       ]
+    }
     default: {
       const unhandled: never = info.control
       throw new Error(`Unhandled control ${String(unhandled)}`)
@@ -105,7 +111,9 @@ export function FactorChart({ explanation }: Props) {
                   {signed(c.shown)}
                 </span>
                 <span className="visually-hidden">
-                  {c.shown === 0 ? ', no effect' : `, ${c.shown > 0 ? 'adds' : 'removes'} ${Math.abs(c.shown)} points`}
+                  {c.shown === 0
+                    ? ', no effect'
+                    : `, ${c.shown > 0 ? 'adds' : 'removes'} ${Math.abs(c.shown)} ${Math.abs(c.shown) === 1 ? 'point' : 'points'}`}
                 </span>
                 <CaretDownIcon className="chart-row__caret" size={16} aria-hidden="true" />
               </button>
@@ -135,7 +143,7 @@ export function FactorChart({ explanation }: Props) {
           =
         </span>
         <span className="chart__term chart__term--total">
-          <span className="chart__term-label label">Your score</span>
+          <span className="chart__term-label label">Your points</span>
           <span className="chart__term-value num">{shownScore}</span>
         </span>
       </p>

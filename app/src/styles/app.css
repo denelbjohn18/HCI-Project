@@ -24,6 +24,15 @@ main:focus {
   outline: none;
 }
 
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--ambient);
+  pointer-events: none;
+}
+
 .app-header {
   position: relative;
   z-index: 10;
@@ -34,14 +43,15 @@ main:focus {
   height: var(--header-height);
   padding-inline: var(--gutter);
   border-bottom: 1px solid var(--hairline);
-  background: var(--bg);
+  container: app-header / inline-size;
 }
 
 .wordmark {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.375rem;
   justify-self: start;
+  min-height: var(--target);
   font-size: var(--text-lead);
   letter-spacing: -0.03em;
   text-decoration: none;
@@ -54,6 +64,7 @@ main:focus {
 
 .wordmark__tag {
   font-weight: 400;
+  white-space: nowrap;
 }
 
 .steps__list {
@@ -97,14 +108,36 @@ main:focus {
   background: currentColor;
 }
 
-.step__index {
-  opacity: 0.6;
-}
-
 .app-header__tools {
   display: flex;
   justify-self: end;
   gap: var(--space-5);
+}
+
+/* Measured in rem, so the header gives way at the same point at every text size. */
+@container app-header (max-width: 50rem) {
+  .wordmark__tag {
+    display: none;
+  }
+}
+
+@container app-header (max-width: 38rem) {
+  .steps__list,
+  .app-header__tools {
+    gap: var(--space-4);
+  }
+}
+
+@container app-header (max-width: 34rem) {
+  .step__index {
+    display: none;
+  }
+}
+
+@container app-header (max-width: 28rem) {
+  .steps__list {
+    gap: var(--space-2);
+  }
 }
 
 /* ---------- Actions ---------- */
@@ -220,6 +253,11 @@ main:focus {
 }
 
 .link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target);
+  min-height: var(--target);
   padding: 0;
   border: 0;
   background: none;
@@ -256,17 +294,12 @@ main:focus {
   white-space: nowrap;
 }
 
-.tag[data-sign='1'] {
-  background: var(--fg);
-  color: var(--bg);
-}
-
 .tag[data-sign='0'] {
   border-color: var(--hairline);
   color: var(--muted);
 }
 
-/* Helping is solid, holding back is hatched: readable in greyscale and print. */
+/* Holding back is hatched: readable in greyscale and print. Helping stays an outline. */
 .swatch {
   display: inline-block;
   width: 0.875rem;
@@ -320,7 +353,6 @@ main:focus {
   --wash: light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.08));
   --pill-line: light-dark(rgb(0 0 0 / 0.45), rgb(255 255 255 / 0.35));
 
-  background: var(--bg);
   color: var(--fg);
 }
 
@@ -340,10 +372,31 @@ main:focus {
 }
 
 /*
- * In the light theme the aura fades out where it meets the page, so it never reads as a box,
- * and a steady orange base keeps it an aura even when the chance on show is low.
+ * In both themes the light dissolves into the page on every side except the viewport edge,
+ * so the chamber never reads as a box. The fades follow a cosine curve because a linear ramp
+ * leaves a visible line where it begins. In the light theme a steady orange base keeps it an
+ * aura even when the chance on show is low.
  */
 .chamber__atmosphere {
+  --fade-right: clamp(6rem, 24%, 12rem);
+  --fade-top: 5rem;
+  --fade-bottom: 10rem;
+  --fade-y: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(0 0 0 / 0.1) calc(var(--fade-top) * 0.2),
+    rgb(0 0 0 / 0.35) calc(var(--fade-top) * 0.4),
+    rgb(0 0 0 / 0.65) calc(var(--fade-top) * 0.6),
+    rgb(0 0 0 / 0.9) calc(var(--fade-top) * 0.8),
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    rgb(0 0 0 / 0.9) calc(100% - var(--fade-bottom) * 0.8),
+    rgb(0 0 0 / 0.65) calc(100% - var(--fade-bottom) * 0.6),
+    rgb(0 0 0 / 0.35) calc(100% - var(--fade-bottom) * 0.4),
+    rgb(0 0 0 / 0.1) calc(100% - var(--fade-bottom) * 0.2),
+    transparent
+  );
+
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -354,8 +407,16 @@ main:focus {
     radial-gradient(45% 70% at 0% 50%, light-dark(rgb(255 186 16 / 0.8), transparent), transparent 80%),
     radial-gradient(90% 80% at 40% 60%, light-dark(rgb(255 128 32 / 0.6), transparent), transparent 85%);
   mask-image:
-    linear-gradient(to right, #000 calc(100% - 4rem), light-dark(transparent, #000)),
-    linear-gradient(to bottom, light-dark(transparent, #000), #000 4rem, #000 calc(100% - 8rem), light-dark(transparent, #000));
+    linear-gradient(
+      to right,
+      #000 calc(100% - var(--fade-right)),
+      rgb(0 0 0 / 0.9) calc(100% - var(--fade-right) * 0.8),
+      rgb(0 0 0 / 0.65) calc(100% - var(--fade-right) * 0.6),
+      rgb(0 0 0 / 0.35) calc(100% - var(--fade-right) * 0.4),
+      rgb(0 0 0 / 0.1) calc(100% - var(--fade-right) * 0.2),
+      transparent
+    ),
+    var(--fade-y);
   mask-composite: intersect;
 }
 
@@ -454,6 +515,10 @@ main:focus {
   margin-top: calc(-1 * var(--space-2));
 }
 
+.chamber__content > .pill {
+  align-self: flex-start;
+}
+
 .chamber .lead {
   color: var(--muted);
 }
@@ -490,6 +555,19 @@ main:focus {
   }
 }
 
+/* These two loops are decorative and longer than 5 seconds, so reduced motion stops them outright. */
+@media (prefers-reduced-motion: reduce) {
+  .chamber__glow::before,
+  .badge__ring {
+    animation: none;
+  }
+}
+
+:root[data-motion='reduce'] .chamber__glow::before,
+:root[data-motion='reduce'] .badge__ring {
+  animation: none;
+}
+
 /* ---------- Profile ---------- */
 
 .assurances {
@@ -499,16 +577,21 @@ main:focus {
 }
 
 .assurances li {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
+  display: flex;
+  gap: var(--space-3);
   padding-block: var(--space-3);
   border-bottom: 1px solid var(--hairline);
   color: var(--muted);
 }
 
-.assurances .label {
-  padding-top: 0.2rem;
-  color: var(--fg);
+.assurances li::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .samples {
@@ -528,7 +611,7 @@ main:focus {
 }
 
 .samples__status {
-  min-height: 1.5rem;
+  min-height: var(--target);
   color: var(--muted);
 }
 
@@ -615,13 +698,30 @@ main:focus {
   color: var(--muted);
 }
 
-.field__error {
+.field:has(.field__error:not(:empty), .field__note:not(:empty)) {
+  align-items: start;
+}
+
+.field:has(.field__error:not(:empty), .field__note:not(:empty)) .field__text {
+  padding-top: calc((var(--target) - 1.3em) / 2);
+}
+
+.field__error,
+.field__note {
   grid-column: 1 / -1;
-  color: light-dark(var(--oxblood), rgb(255 150 140));
   font-size: 0.875rem;
 }
 
-.field__error:not(:empty) {
+.field__error {
+  color: light-dark(var(--oxblood), rgb(255 150 140));
+}
+
+.field__note {
+  color: var(--muted);
+}
+
+.field__error:not(:empty),
+.field__note:not(:empty) {
   margin-top: var(--space-2);
 }
 
@@ -826,8 +926,10 @@ main:focus {
 }
 
 .segmented__option span {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   min-width: 5.5rem;
   min-height: var(--target);
   padding: 0 var(--space-5);
@@ -844,8 +946,20 @@ main:focus {
 
 .segmented__option:has(input:checked) span {
   border-color: var(--fg);
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--wash);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--fg);
+}
+
+.segmented__option:has(input:checked) span::before {
+  content: '';
+  box-sizing: content-box;
+  width: 0.45rem;
+  height: 0.22rem;
+  margin-top: -0.15rem;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  transform: rotate(-45deg);
 }
 
 .segmented__option:has(input:focus-visible) span {
@@ -1032,10 +1146,6 @@ main:focus {
   color: var(--fg);
 }
 
-.track__from {
-  opacity: 0.7;
-}
-
 .extremes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
@@ -1102,6 +1212,7 @@ main:focus {
   color: var(--muted);
 }
 
+.split__work > .disclosure,
 .split__work > .text-link {
   margin-top: var(--space-5);
 }
@@ -1287,13 +1398,6 @@ main:focus {
 
 /* ---------- Explore ---------- */
 
-.live__band {
-  font-size: var(--text-heading);
-  font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
-
 .live__score {
   display: flex;
   flex-wrap: wrap;
@@ -1309,35 +1413,55 @@ main:focus {
   border: 1px solid var(--fg);
 }
 
-.suggestion__changes {
+/* Fixed block heights, so a new suggestion never moves the questions under the pointer. */
+.suggestion h2 {
+  min-height: 2.2em;
+}
+
+.suggestion h2:focus {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.suggestion__body {
+  height: 11rem;
+  overflow: auto;
   border-top: 1px solid var(--hairline);
+  padding-top: var(--space-3);
 }
 
 .suggestion__changes li {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
+  display: flex;
   align-items: baseline;
+  gap: var(--space-3);
   padding-block: var(--space-3);
   border-bottom: 1px solid var(--hairline);
   font-size: var(--text-lead);
 }
 
-.suggestion__changes .label {
-  color: var(--muted);
+.suggestion__changes li::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateY(-0.15em);
+}
+
+.suggestion__note {
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
 }
 
 .suggestion__footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-4);
+  min-height: calc(var(--target) + var(--space-2));
   padding-top: var(--space-2);
-}
-
-.suggestion__footer .muted {
-  max-width: 30ch;
-  font-size: 0.875rem;
 }
 
 .history {
@@ -1366,7 +1490,7 @@ main:focus {
   flex-direction: column;
   width: min(28rem, 100vw);
   border-left: 1px solid var(--fg);
-  background: var(--bg);
+  background: var(--ambient), var(--bg);
   transform: translateX(100%);
   visibility: hidden;
   transition:
@@ -1532,6 +1656,23 @@ main:focus {
   color: var(--muted);
 }
 
+@media (min-width: 961px) {
+  html {
+    scroll-padding-top: var(--header-height);
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ambient), var(--bg);
+  }
+
+  .chamber__inner {
+    top: var(--header-height);
+  }
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-height: 820px) {
@@ -1573,7 +1714,7 @@ main:focus {
   }
 
   .chamber__atmosphere {
-    mask-image: linear-gradient(to bottom, light-dark(transparent, #000), #000 4rem, #000 calc(100% - 8rem), light-dark(transparent, #000));
+    mask-image: var(--fade-y);
   }
 
   /* Thumb zone: live status and undo stay within reach while the controls scroll. */
@@ -1587,6 +1728,8 @@ main:focus {
     gap: var(--space-4);
     padding: var(--space-3) var(--gutter) calc(var(--space-3) + var(--safe-bottom));
     border-top: 1px solid var(--hairline);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(20px) saturate(1.6);
   }
 
   .live-bar__status {
@@ -1617,14 +1760,6 @@ main:focus {
 @media (max-width: 720px) {
   .app-header {
     gap: var(--space-3);
-  }
-
-  .wordmark__tag {
-    display: none;
-  }
-
-  .steps__list {
-    gap: var(--space-4);
   }
 }
 
@@ -1768,7 +1903,8 @@ main:focus {
     margin-inline: calc(-1 * var(--gutter));
     padding: var(--space-3) var(--gutter) calc(var(--space-3) + var(--safe-bottom));
     border-top: 1px solid var(--hairline);
-    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(20px) saturate(1.6);
   }
 
   .form-footer .muted {

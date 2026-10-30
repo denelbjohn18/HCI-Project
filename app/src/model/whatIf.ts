@@ -1,6 +1,6 @@
 import { bandFor, nextBand, probabilityOf, type Band } from './explain'
-import { snap } from './factors'
-import { SPEC, type FactorKey, type Profile } from './scorecard'
+import { learnedValue, snap } from './factors'
+import { FACTOR_KEYS, SPEC, type FactorKey, type Profile } from './scorecard'
 
 interface Move {
   key: FactorKey
@@ -54,18 +54,23 @@ function* stepCombinations(limits: number[], prefix: number[] = []): Generator<n
   for (let n = 0; n <= limits[prefix.length]; n++) yield* stepCombinations(limits, [...prefix, n])
 }
 
+function learnedProfile(profile: Profile): Profile {
+  return Object.fromEntries(FACTOR_KEYS.map((key) => [key, learnedValue(key, profile[key])])) as Profile
+}
+
 /** Finds the lowest-effort combination of short-term changes that reaches the next band up. */
 export function suggestNextBand(profile: Profile): Suggestion | null {
-  const target = nextBand(bandFor(probabilityOf(profile)))
+  const base = learnedProfile(profile)
+  const target = nextBand(bandFor(probabilityOf(base)))
   if (!target) return null
 
-  const limits = MOVES.map((m) => Math.floor((SPEC[m.key].max - profile[m.key]) / m.step + 1e-9))
+  const limits = MOVES.map((m) => Math.floor((SPEC[m.key].max - base[m.key]) / m.step + 1e-9))
   let best: Candidate | null = null
 
   for (const steps of stepCombinations(limits)) {
-    const draft = { ...profile }
+    const draft = { ...base }
     MOVES.forEach((m, i) => {
-      if (steps[i] > 0) draft[m.key] = snap(m.key, profile[m.key] + steps[i] * m.step)
+      if (steps[i] > 0) draft[m.key] = snap(m.key, base[m.key] + steps[i] * m.step)
     })
     const probability = probabilityOf(draft)
     if (RANK[bandFor(probability)] < RANK[target]) continue
@@ -80,15 +85,14 @@ export function suggestNextBand(profile: Profile): Suggestion | null {
 
   if (!best) return null
   const found = best.profile
-  return {
-    target,
-    profile: found,
-    changes: MOVES.filter((m) => found[m.key] !== profile[m.key]).map((m) => ({
-      key: m.key,
-      from: profile[m.key],
-      to: found[m.key],
-    })),
-  }
+  const changes = MOVES.filter((m) => found[m.key] !== base[m.key]).map((m) => ({
+    key: m.key,
+    from: profile[m.key],
+    to: found[m.key],
+  }))
+  const next = { ...profile }
+  for (const change of changes) next[change.key] = change.to
+  return { target, profile: next, changes }
 }
 
 export function describeChange({ key, from, to }: Change): string {

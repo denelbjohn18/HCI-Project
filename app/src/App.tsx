@@ -4,6 +4,7 @@ import { AboutPanel } from './components/AboutPanel'
 import { AppHeader, type PanelName } from './components/AppHeader'
 import { DisplayPanel } from './components/DisplayPanel'
 import { SidePanel } from './components/SidePanel'
+import { listenForPresses, setFeedbackPrefs } from './lib/feedback'
 import { BaselineScreen } from './screens/BaselineScreen'
 import { ExploreScreen } from './screens/ExploreScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
@@ -37,8 +38,17 @@ export default function App() {
     mainRef.current?.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true })
   }, [route.name])
 
+  useEffect(() => {
+    setFeedbackPrefs({ sound: settings.sound === 'on', haptics: settings.haptics === 'on' })
+  }, [settings.sound, settings.haptics])
+
+  // The notebook page is the plain comparison condition for the study, so it stays silent.
+  const isBaseline = route.name === 'baseline'
+  useEffect(() => (isBaseline ? undefined : listenForPresses()), [isBaseline])
+
   const togglePanel = useCallback((name: PanelName) => setPanel((open) => (open === name ? null : name)), [])
   const closePanel = useCallback(() => setPanel(null), [])
+  const toggleSound = () => update({ sound: settings.sound === 'on' ? 'off' : 'on' })
 
   const skipToMain = (event: MouseEvent) => {
     event.preventDefault()
@@ -69,7 +79,13 @@ export default function App() {
       <a className="skip-link" href="#main" onClick={skipToMain}>
         Skip to content
       </a>
-      <AppHeader route={route.name} panel={panel} onTogglePanel={togglePanel} />
+      <AppHeader
+        route={route.name}
+        panel={panel}
+        onTogglePanel={togglePanel}
+        sound={settings.sound === 'on'}
+        onToggleSound={toggleSound}
+      />
       <main id="main" ref={mainRef} tabIndex={-1}>
         {screen}
       </main>
