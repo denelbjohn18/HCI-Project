@@ -8,7 +8,7 @@ It is the mini-project for AIM4141 Human Computer Interaction at Manipal Univers
 
 ## Try it
 
-Live site: [hci-project-weld.vercel.app](https://hci-project-weld.vercel.app)
+Live site: [hci-23fe10cai00465.vercel.app](https://hci-23fe10cai00465.vercel.app)
 
 Locally, with Node 22 or newer:
 
