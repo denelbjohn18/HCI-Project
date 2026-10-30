@@ -1,0 +1,241 @@
+{
+  "dataset": {
+    "rows_downloaded": 10000,
+    "rows_after_dedup": 9928,
+    "train_rows": 7942,
+    "test_rows": 1986,
+    "placed_share": 0.4157
+  },
+  "feature_set_comparison_cv5": [
+    {
+      "set": "all 10 columns",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training",
+        "ssc",
+        "hsc"
+      ],
+      "accuracy": 0.7949,
+      "roc_auc": 0.8736,
+      "log_loss": 0.44
+    },
+    {
+      "set": "8 factors a student can still act on",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7902,
+      "roc_auc": 0.869,
+      "log_loss": 0.4463
+    },
+    {
+      "set": "7 factors, without cgpa",
+      "features": [
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7905,
+      "roc_auc": 0.866,
+      "log_loss": 0.4511
+    },
+    {
+      "set": "7 factors, without internships",
+      "features": [
+        "cgpa",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7897,
+      "roc_auc": 0.8691,
+      "log_loss": 0.4464
+    },
+    {
+      "set": "7 factors, without projects",
+      "features": [
+        "cgpa",
+        "internships",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7885,
+      "roc_auc": 0.8667,
+      "log_loss": 0.4498
+    },
+    {
+      "set": "7 factors, without certifications",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "aptitude",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7863,
+      "roc_auc": 0.8676,
+      "log_loss": 0.4486
+    },
+    {
+      "set": "7 factors, without aptitude",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "softSkills",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7837,
+      "roc_auc": 0.8572,
+      "log_loss": 0.4648
+    },
+    {
+      "set": "7 factors, without softSkills",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "extracurricular",
+        "training"
+      ],
+      "accuracy": 0.7907,
+      "roc_auc": 0.8662,
+      "log_loss": 0.4506
+    },
+    {
+      "set": "7 factors, without extracurricular",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "training"
+      ],
+      "accuracy": 0.7842,
+      "roc_auc": 0.8613,
+      "log_loss": 0.457
+    },
+    {
+      "set": "7 factors, without training",
+      "features": [
+        "cgpa",
+        "internships",
+        "projects",
+        "certifications",
+        "aptitude",
+        "softSkills",
+        "extracurricular"
+      ],
+      "accuracy": 0.7851,
+      "roc_auc": 0.8626,
+      "log_loss": 0.4563
+    }
+  ],
+  "chosen_set": "7 factors, without internships",
+  "chosen_C": 0.06579,
+  "test": {
+    "accuracy": 0.8107,
+    "balanced_accuracy": 0.8045,
+    "majority_class_accuracy": 0.5841,
+    "roc_auc": 0.8786,
+    "brier": 0.1379,
+    "log_loss": 0.4319,
+    "confusion_matrix": [
+      [
+        976,
+        184
+      ],
+      [
+        192,
+        634
+      ]
+    ],
+    "calibration": [
+      {
+        "range": [
+          0.0,
+          0.2
+        ],
+        "count": 763,
+        "predicted": 0.081,
+        "observed": 0.097
+      },
+      {
+        "range": [
+          0.2,
+          0.4
+        ],
+        "count": 287,
+        "predicted": 0.288,
+        "observed": 0.258
+      },
+      {
+        "range": [
+          0.4,
+          0.6
+        ],
+        "count": 254,
+        "predicted": 0.5,
+        "observed": 0.469
+      },
+      {
+        "range": [
+          0.6,
+          0.8
+        ],
+        "count": 319,
+        "predicted": 0.703,
+        "observed": 0.708
+      },
+      {
+        "range": [
+          0.8,
+          1.0
+        ],
+        "count": 363,
+        "predicted": 0.862,
+        "observed": 0.917
+      }
+    ]
+  },
+  "standardized_coefficients": {
+    "cgpa": 0.3151,
+    "projects": 0.2746,
+    "certifications": 0.2042,
+    "aptitude": 0.6696,
+    "softSkills": 0.3185,
+    "extracurricular": 0.4541,
+    "training": 0.425
+  }
+}

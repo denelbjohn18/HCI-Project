@@ -1,0 +1,88 @@
+{
+  "generatedBy": "model/train.py",
+  "generatedOn": "2026-10-29",
+  "dataset": {
+    "name": "Campus Recruitment (Krooz/Campus_Recruitment_CSV)",
+    "url": "https://huggingface.co/datasets/Krooz/Campus_Recruitment_CSV",
+    "license": "CC0-1.0",
+    "students": 9928,
+    "placedShare": 0.4157
+  },
+  "model": {
+    "type": "logistic regression",
+    "intercept": -16.457509238077463,
+    "pointsPerLogit": 8.049061943782053,
+    "scoreMidpoint": 50,
+    "referenceLogit": -0.6279260268321849
+  },
+  "features": [
+    {
+      "key": "cgpa",
+      "weight": 0.49324095396711143,
+      "min": 6.5,
+      "max": 9.1,
+      "step": 0.1,
+      "mean": 7.6962
+    },
+    {
+      "key": "projects",
+      "weight": 0.3164524961084684,
+      "min": 0.0,
+      "max": 3.0,
+      "step": 1,
+      "mean": 2.0234
+    },
+    {
+      "key": "certifications",
+      "weight": 0.22584137481757963,
+      "min": 0.0,
+      "max": 3.0,
+      "step": 1,
+      "mean": 1.0084
+    },
+    {
+      "key": "aptitude",
+      "weight": 0.08255730159263602,
+      "min": 60.0,
+      "max": 90.0,
+      "step": 1,
+      "mean": 79.4139
+    },
+    {
+      "key": "softSkills",
+      "weight": 0.7781923706167776,
+      "min": 3.0,
+      "max": 4.8,
+      "step": 0.1,
+      "mean": 4.3233
+    },
+    {
+      "key": "extracurricular",
+      "weight": 0.9217584013945566,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1,
+      "mean": 0.5855
+    },
+    {
+      "key": "training",
+      "weight": 0.9613767992626057,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 1,
+      "mean": 0.7336
+    }
+  ],
+  "excluded": [
+    "internships",
+    "ssc",
+    "hsc"
+  ],
+  "evaluation": {
+    "testStudents": 1986,
+    "accuracy": 0.8107,
+    "rocAuc": 0.8786,
+    "allColumnsAccuracy": 0.7949,
+    "chosenSetAccuracy": 0.7897
+  }
+}

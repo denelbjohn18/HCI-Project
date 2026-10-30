@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en-IN" data-theme="system" data-text-size="default" data-contrast="standard" data-motion="system">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="See your chance of campus placement, what shapes it, and which changes would move it." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
+    <title>Lumen</title>
+    <script>
+      try {
+        const saved = JSON.parse(localStorage.getItem('lumen:settings:v1') || '{}')
+        for (const key of ['theme', 'textSize', 'contrast', 'motion']) {
+          if (typeof saved[key] === 'string') document.documentElement.dataset[key] = saved[key]
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
